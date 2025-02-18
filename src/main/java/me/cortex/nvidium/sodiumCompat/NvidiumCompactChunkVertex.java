@@ -27,17 +27,14 @@ public class NvidiumCompactChunkVertex implements ChunkVertexType {
     private static final float TEXTURE_SCALE = (1.0f / TEXTURE_MAX_VALUE);
 
 
-    @Override
     public float getTextureScale() {
         return TEXTURE_SCALE;
     }
 
-    @Override
     public float getPositionScale() {
         return MODEL_SCALE;
     }
 
-    @Override
     public float getPositionOffset() {
         return -MODEL_ORIGIN;
     }
@@ -49,13 +46,16 @@ public class NvidiumCompactChunkVertex implements ChunkVertexType {
 
     @Override
     public ChunkVertexEncoder getEncoder() {
-        return (ptr, material, vertex, sectionIndex) -> {
-            MemoryUtil.memPutInt(ptr + 0, (encodePosition(vertex.x) << 0) | (encodePosition(vertex.y) << 16));
-            MemoryUtil.memPutInt(ptr + 4, (encodePosition(vertex.z) << 0) | (encodeDrawParameters(material, sectionIndex) << 16));
-            MemoryUtil.memPutInt(ptr + 8, (encodeColor(vertex.color) << 0) | (encodeLight(vertex.light) << 24));
-            MemoryUtil.memPutInt(ptr + 12, encodeTexture(vertex.u, vertex.v));
+        return (ptr, material, vertices, sectionIndex) -> {
+            for (ChunkVertexEncoder.Vertex vertex : vertices) { // 遍历 vertices 数组
+                MemoryUtil.memPutInt(ptr + 0, (encodePosition(vertex.x) << 0) | (encodePosition(vertex.y) << 16));
+                MemoryUtil.memPutInt(ptr + 4, (encodePosition(vertex.z) << 0) | (encodeDrawParameters(material, sectionIndex) << 16));
+                MemoryUtil.memPutInt(ptr + 8, (encodeColor(vertex.color) << 0) | (encodeLight(vertex.light) << 24));
+                MemoryUtil.memPutInt(ptr + 12, encodeTexture(vertex.u, vertex.v));
 
-            return ptr + STRIDE;
+                ptr += STRIDE; // 移动到下一个顶点的位置
+            }
+            return ptr; // 返回更新后的指针
         };
     }
 

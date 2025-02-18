@@ -70,7 +70,7 @@ public class AsyncOcclusionTracker {
             List<RenderSection> blockEntitySections = new ArrayList<>();
             Set<Sprite> animatedSpriteSet = animateVisibleSpritesOnly?new HashSet<>():null;
             final OcclusionCuller.Visitor visitor = (section, visible) -> {
-                if (section.getPendingUpdate() != null && section.getBuildCancellationToken() == null) {
+                if (section.getPendingUpdate() != null && section.getTaskCancellationToken() == null) {
                     if ((!((IRenderSectionExtension)section).isSubmittedRebuild()) && !((IRenderSectionExtension)section).isSeen()) {//If it is in submission queue or seen dont enqueue
                         //Set that the section has been seen
                         ((IRenderSectionExtension)section).isSeen(true);
@@ -136,7 +136,7 @@ public class AsyncOcclusionTracker {
                 if (section.isDisposed())
                     continue;
                 var type = section.getPendingUpdate();
-                if (type != null && section.getBuildCancellationToken() == null) {
+                if (type != null && section.getTaskCancellationToken() == null) {
                     var queue = outputRebuildQueue.get(type);
                     if (queue.size() < type.getMaximumQueueSize()) {
                         ((IRenderSectionExtension) section).isSubmittedRebuild(true);

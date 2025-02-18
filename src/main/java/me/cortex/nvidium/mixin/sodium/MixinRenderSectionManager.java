@@ -38,7 +38,7 @@ import java.util.Map;
 public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     @Shadow @Final private RenderRegionManager regions;
     @Shadow @Final private Long2ReferenceMap<RenderSection> sectionByPosition;
-    @Shadow private @NotNull Map<ChunkUpdateType, ArrayDeque<RenderSection>> rebuildLists;
+    @Shadow private @NotNull Map<ChunkUpdateType, ArrayDeque<RenderSection>> taskLists;
     @Shadow @Final private int renderDistance;
     @Unique private NvidiumWorldRenderer renderer;
     @Unique private Viewport viewport;
@@ -54,7 +54,7 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
         if (Nvidium.IS_ENABLED) {
             if (renderer != null)
                 throw new IllegalStateException("Cannot have multiple world renderers");
-            renderer = new NvidiumWorldRenderer(Nvidium.config.async_bfs?new AsyncOcclusionTracker(renderDistance, sectionByPosition, world, rebuildLists):null);
+            renderer = new NvidiumWorldRenderer(Nvidium.config.async_bfs?new AsyncOcclusionTracker(renderDistance, sectionByPosition, world, taskLists):null);
             ((INvidiumWorldRendererSetter)regions).setWorldRenderer(renderer);
         }
     }
@@ -131,15 +131,6 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
         }
     }
 
-    @Redirect(method = "submitRebuildTasks", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/RenderSection;setPendingUpdate(Lme/jellysquid/mods/sodium/client/render/chunk/ChunkUpdateType;)V"))
-    private void injectEnqueueFalse(RenderSection instance, ChunkUpdateType type) {
-        instance.setPendingUpdate(type);
-        if (Nvidium.IS_ENABLED && Nvidium.config.async_bfs) {
-            //We need to reset the fact that its been submitted to the rebuild queue from the build queue
-            ((IRenderSectionExtension) instance).isSubmittedRebuild(false);
-        }
-    }
-
     @Unique
     private boolean isSectionVisibleBfs(RenderSection section) {
         //The reason why this is done is that since the bfs search is async it could be updating the frame counter with the next frame
@@ -172,11 +163,11 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     @Inject(method = "scheduleRebuild", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/RenderSection;setPendingUpdate(Lme/jellysquid/mods/sodium/client/render/chunk/ChunkUpdateType;)V", shift = At.Shift.AFTER), locals = LocalCapture.CAPTURE_FAILHARD)
     private void instantReschedule(int x, int y, int z, boolean important, CallbackInfo ci, RenderSection section, ChunkUpdateType pendingUpdate) {
         if (Nvidium.IS_ENABLED && Nvidium.config.async_bfs) {
-            var queue = rebuildLists.get(pendingUpdate);
+            var queue = taskLists.get(pendingUpdate);
             //TODO:FIXME: this might result in the section being enqueued multiple times, if this gets executed, and the async search sees it at the exactly wrong moment
             if (isSectionVisibleBfs(section) && queue.size() < pendingUpdate.getMaximumQueueSize()) {
                 ((IRenderSectionExtension)section).isSubmittedRebuild(true);
-                rebuildLists.get(pendingUpdate).add(section);
+                taskLists.get(pendingUpdate).add(section);
             }
         }
     }

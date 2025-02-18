@@ -1,12 +1,13 @@
 package me.cortex.nvidium.mixin.sodium;
 
+import dev.architectury.patchedmixin.staticmixin.spongepowered.asm.mixin.Shadow;
 import me.cortex.nvidium.sodiumCompat.NvidiumOptionFlags;
 import me.jellysquid.mods.sodium.client.gui.options.OptionFlag;
 import org.apache.commons.lang3.ArrayUtils;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
-import org.spongepowered.asm.mixin.Shadow;
+
 import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(value = OptionFlag.class, remap = false)

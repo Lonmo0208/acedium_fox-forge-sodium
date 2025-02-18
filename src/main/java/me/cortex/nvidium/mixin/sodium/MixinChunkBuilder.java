@@ -1,10 +1,12 @@
 package me.cortex.nvidium.mixin.sodium;
 
+import dev.architectury.patchedmixin.staticmixin.spongepowered.asm.mixin.injection.At;
+import dev.architectury.patchedmixin.staticmixin.spongepowered.asm.mixin.injection.Redirect;
 import me.cortex.nvidium.Nvidium;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.executor.ChunkBuilder;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+
+
 
 import java.util.List;
 

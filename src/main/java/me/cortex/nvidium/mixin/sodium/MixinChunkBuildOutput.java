@@ -21,7 +21,7 @@ public class MixinChunkBuildOutput implements IRepackagedResult {
         repackagedSectionOutput = output;
     }
 
-    @Inject(method = "delete", at = @At("HEAD"))
+    @Inject(method = "destroy", at = @At("HEAD"))
     private void cleanup(CallbackInfo ci) {
         if (repackagedSectionOutput != null) {
             repackagedSectionOutput.delete();

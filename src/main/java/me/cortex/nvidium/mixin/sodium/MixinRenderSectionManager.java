@@ -15,7 +15,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.region.RenderRegionManager;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.DefaultTerrainRenderPasses;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.TerrainRenderPass;
 import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.ChunkVertexType;
-import me.jellysquid.mods.sodium.client.render.texture.SpriteUtil;
+import net.caffeinemc.mods.sodium.api.texture.SpriteUtil;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.world.ClientWorld;
@@ -54,8 +54,8 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
         if (Nvidium.IS_ENABLED) {
             if (renderer != null)
                 throw new IllegalStateException("Cannot have multiple world renderers");
-            renderer = new NvidiumWorldRenderer(Nvidium.config.async_bfs?new AsyncOcclusionTracker(renderDistance, sectionByPosition, world, taskLists):null);
-            ((INvidiumWorldRendererSetter)regions).setWorldRenderer(renderer);
+            renderer = new NvidiumWorldRenderer(Nvidium.config.async_bfs ? new AsyncOcclusionTracker(renderDistance, sectionByPosition, world, taskLists) : null);
+            ((INvidiumWorldRendererSetter) regions).setWorldRenderer(renderer);
         }
     }
 
@@ -68,26 +68,25 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
         return vertexType;
     }
 
-
     @Inject(method = "destroy", at = @At("TAIL"))
     private void destroy(CallbackInfo ci) {
         if (Nvidium.IS_ENABLED) {
             if (renderer == null)
                 throw new IllegalStateException("Pipeline already destroyed");
-            ((INvidiumWorldRendererSetter)regions).setWorldRenderer(null);
+            ((INvidiumWorldRendererSetter) regions).setWorldRenderer(null);
             renderer.delete();
             renderer = null;
         }
     }
 
     @Redirect(method = "onSectionRemoved", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/RenderSection;delete()V"))
-    private void deleteSection(RenderSection section) {
+    private void deleteSection(RenderSection instance) {
         if (Nvidium.IS_ENABLED) {
             if (Nvidium.config.region_keep_distance == 32) {
-                renderer.deleteSection(section);
+                renderer.deleteSection(instance);
             }
         }
-        section.delete();
+        instance.delete();
     }
 
     @Inject(method = "update", at = @At("HEAD"))
@@ -133,8 +132,6 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
 
     @Unique
     private boolean isSectionVisibleBfs(RenderSection section) {
-        //The reason why this is done is that since the bfs search is async it could be updating the frame counter with the next frame
-        // while some sections that arnt updated/ticked yet still have the old frame id
         int delta = Math.abs(section.getLastVisibleFrame() - renderer.getAsyncFrameId());
         return delta <= 1;
     }
@@ -155,7 +152,7 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
                 return;
             }
             for (var sprite : sprites) {
-                SpriteUtil.markSpriteActive(sprite);
+                SpriteUtil.INSTANCE.markSpriteActive(sprite);
             }
         }
     }
@@ -164,10 +161,9 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     private void instantReschedule(int x, int y, int z, boolean important, CallbackInfo ci, RenderSection section, ChunkUpdateType pendingUpdate) {
         if (Nvidium.IS_ENABLED && Nvidium.config.async_bfs) {
             var queue = taskLists.get(pendingUpdate);
-            //TODO:FIXME: this might result in the section being enqueued multiple times, if this gets executed, and the async search sees it at the exactly wrong moment
-            if (isSectionVisibleBfs(section) && queue.size() < pendingUpdate.getMaximumQueueSize()) {
-                ((IRenderSectionExtension)section).isSubmittedRebuild(true);
-                taskLists.get(pendingUpdate).add(section);
+            if (queue != null && isSectionVisibleBfs(section) && queue.size() < pendingUpdate.getMaximumQueueSize()) {
+                ((IRenderSectionExtension) section).isSubmittedRebuild(true);
+                queue.add(section);
             }
         }
     }

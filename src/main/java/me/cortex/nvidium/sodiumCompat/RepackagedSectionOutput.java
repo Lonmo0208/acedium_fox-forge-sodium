@@ -12,4 +12,5 @@ public record RepackagedSectionOutput(int quads,
     public void delete() {
         geometry.free();
     }
+
 }

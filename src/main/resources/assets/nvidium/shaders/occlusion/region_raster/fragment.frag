@@ -12,8 +12,13 @@ layout(early_fragment_tests) in;
 #ifdef DEBUG
 layout(location = 0) out vec4 colour;
 void main() {
-    uint uid = gl_PrimitiveID*132471+123571;
-    colour = vec4(float((uid>>0)&7)/7, float((uid>>3)&7)/7, float((uid>>6)&7)/7, 1.0);
+    uint uid = gl_PrimitiveID * 132471u + 123571u;
+    colour = vec4(
+    float((uid >> 0u) & 7u) / 7.0,
+    float((uid >> 3u) & 7u) / 7.0,
+    float((uid >> 6u) & 7u) / 7.0,
+    1.0
+    );
     regionVisibility[gl_PrimitiveID] = uint8_t(1);
 }
 #else
